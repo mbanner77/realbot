@@ -246,6 +246,15 @@ export function createGatewayHttpServer(opts: {
     }
 
     try {
+      // Auto-redirect root to Control UI with token (for Render/cloud deployments)
+      const url = new URL(req.url ?? "/", `http://localhost`);
+      if (url.pathname === "/" && controlUiEnabled && resolvedAuth.token) {
+        res.statusCode = 302;
+        res.setHeader("Location", `${controlUiBasePath}/?token=${encodeURIComponent(resolvedAuth.token)}`);
+        res.end();
+        return;
+      }
+
       const configSnapshot = loadConfig();
       const trustedProxies = configSnapshot.gateway?.trustedProxies ?? [];
       if (await handleHooksRequest(req, res)) {
